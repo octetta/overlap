@@ -1,0 +1,732 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#3646ff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Overlap">
+<title>Overlap — family time zones</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%233646ff'/%3E%3Crect x='10' y='20' width='44' height='8' rx='4' fill='%231c2757'/%3E%3Crect x='10' y='36' width='44' height='8' rx='4' fill='%23ffd77e'/%3E%3Crect x='30' y='12' width='4' height='40' rx='2' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..700&family=Instrument+Sans:wght@400..700&display=swap">
+<style>
+:root{
+  --bg:#f2f4f8; --surface:#ffffff; --ink:#121a2e; --muted:#5d6783; --line:#dde2ee;
+  --accent:#3646ff; --accent-ink:#ffffff; --accent-soft:#e6e9ff;
+  --night:#1c2757; --night-ink:#aebbf2;
+  --twi:#6f5fb8;   --twi-ink:#ffffff;
+  --day:#ffd77e;   --day-ink:#4a3500;
+  --work:#86d9a8;  --work-ink:#0d3d22;
+  --display:"Bricolage Grotesque","Avenir Next","Segoe UI",system-ui,sans-serif;
+  --body:"Instrument Sans","Avenir Next","Segoe UI",system-ui,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#0d1220; --surface:#151c30; --ink:#eaf0ff; --muted:#93a0c4; --line:#263050;
+    --accent:#8b97ff; --accent-ink:#0d1220; --accent-soft:#232b57;
+    color-scheme:dark;
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink); font:400 16px/1.45 var(--body);
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+.wrap{max-width:1040px; margin:0 auto; padding:20px 16px 48px}
+button,input{font:inherit; color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent); outline-offset:3px}
+
+/* header */
+.top{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:18px}
+h1{font:700 30px/1 var(--display); letter-spacing:-.02em; margin:0}
+.tag{margin:6px 0 0; color:var(--muted); font-size:14px}
+.btn{
+  border:1px solid var(--line); background:var(--surface); border-radius:999px;
+  padding:9px 16px; font-weight:500; line-height:1.1;
+}
+.btn.primary{background:var(--accent); color:var(--accent-ink); border-color:transparent; font-weight:600}
+.btn.small{padding:7px 12px; font-size:14px}
+.btn[aria-pressed="true"]{background:var(--accent-soft); border-color:var(--accent)}
+
+/* day bar */
+.daybar{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:14px}
+.daybar .step{width:38px; height:38px; padding:0; display:grid; place-items:center; font-size:18px}
+.daybar input[type=date]{
+  border:1px solid var(--line); background:var(--surface); border-radius:999px; padding:8px 14px; min-height:38px;
+}
+.live{display:inline-flex; align-items:center; gap:8px}
+.live i{width:8px; height:8px; border-radius:50%; background:var(--muted)}
+.live.on{background:var(--accent-soft); border-color:var(--accent)}
+.live.on i{background:#17b26a; animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){.live.on i{animation:none}}
+
+/* rows */
+#rows{list-style:none; margin:0; padding:0; display:grid; gap:10px}
+.row{
+  background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:14px 16px 16px;
+  display:grid; grid-template-columns:1fr auto; grid-template-areas:"who when" "track track"; gap:12px 16px; align-items:end;
+}
+.who{grid-area:who; min-width:0}
+.name{font:600 19px/1.2 var(--display); letter-spacing:-.01em; display:flex; align-items:center; gap:8px; min-width:0}
+.name span.t{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.rm{
+  border:0; background:transparent; color:var(--muted); width:28px; height:28px; border-radius:50%; font-size:20px; line-height:1; flex:none;
+}
+.rm:hover{background:var(--accent-soft); color:var(--ink)}
+.meta{color:var(--muted); font-size:13.5px; margin-top:2px}
+.sun{color:var(--muted); font-size:13px; margin-top:1px}
+.sun:empty{display:none}
+.when{grid-area:when; text-align:right}
+.clock{font:600 34px/1 var(--display); letter-spacing:-.02em; white-space:nowrap}
+.clock small{font:600 14px var(--body); margin-left:4px; color:var(--muted); letter-spacing:0}
+.date{font-size:13.5px; color:var(--muted); margin-top:4px; white-space:nowrap}
+.date em{font-style:normal; font-weight:600; color:var(--ink); margin-left:6px}
+@media (min-width:760px){
+  .row{grid-template-columns:240px 170px 1fr; grid-template-areas:"who when track"; align-items:center; gap:16px 20px; padding:14px 18px}
+  .when{text-align:left}
+}
+
+/* timeline */
+.track{grid-area:track; position:relative; height:44px; touch-action:pan-y; cursor:ew-resize; user-select:none; -webkit-user-select:none; margin:4px 0}
+.cells{position:absolute; inset:0; border-radius:10px; overflow:hidden; display:grid; grid-template-columns:repeat(24,1fr)}
+.cell{display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:9.5px; line-height:1.1; white-space:nowrap; box-shadow:inset -1px 0 rgba(0,0,0,.08)}
+.cell b{font-weight:600}
+.cell i{font-style:normal; font-size:8px; opacity:.8}
+.cell.n{color:var(--night-ink)}
+.cell.t{color:var(--twi-ink)}
+.cell.d{color:var(--day-ink)}
+.cell.w{color:var(--work-ink)}
+.cell.mid b{text-decoration:underline; text-underline-offset:2px}
+.cur{position:absolute; top:-6px; bottom:-6px; width:3px; margin-left:-1.5px; background:#fff; border-radius:2px; box-shadow:0 0 0 1.5px rgba(10,16,40,.75); pointer-events:none}
+.cur::before{
+  content:""; position:absolute; left:50%; top:-6px; width:16px; height:16px; margin-left:-8px; border-radius:50%;
+  background:var(--accent); border:2px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,.4);
+}
+@media (min-width:760px){.cell{font-size:11px}.cell i{font-size:9px}}
+
+.empty{
+  border:1.5px dashed var(--line); border-radius:16px; padding:22px 18px; text-align:center; color:var(--muted);
+}
+.empty p{margin:0 0 12px}
+
+.legend{display:flex; gap:14px; flex-wrap:wrap; margin:18px 2px 0; font-size:13px; color:var(--muted)}
+.legend span{display:inline-flex; align-items:center; gap:6px}
+.legend s{width:14px; height:14px; border-radius:4px; display:inline-block; text-decoration:none}
+
+.tools{display:flex; gap:8px; flex-wrap:wrap; margin-top:22px}
+footer{margin-top:26px; font-size:12.5px; color:var(--muted); max-width:62ch}
+
+/* dialog */
+dialog{
+  border:0; padding:0; border-radius:20px; background:var(--surface); color:var(--ink);
+  width:min(560px, calc(100vw - 24px)); max-height:min(82vh, 680px); margin:max(12px, 6vh) auto auto;
+  box-shadow:0 24px 70px rgba(0,0,0,.35);
+}
+dialog[open]{display:flex; flex-direction:column}
+dialog::backdrop{background:rgba(8,12,28,.55)}
+.dhead{display:flex; gap:8px; padding:14px; border-bottom:1px solid var(--line)}
+.dhead input{
+  flex:1; min-width:0; border:1px solid var(--line); background:var(--bg); border-radius:12px; padding:11px 14px; font-size:16px;
+}
+.results{overflow:auto; padding:6px 8px 10px; flex:1}
+.group{margin:12px 8px 4px; font-size:13px; color:var(--muted); font-weight:600}
+.item{
+  display:flex; width:100%; justify-content:space-between; gap:12px; align-items:center; text-align:left;
+  border:0; background:transparent; padding:10px 8px; border-radius:12px;
+}
+.item:hover,.item:focus-visible{background:var(--accent-soft)}
+.item[disabled]{opacity:.5; cursor:default}
+.item .l{min-width:0}
+.item .n1{font-weight:600}
+.item .n2{font-size:13px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.item .tm{font:600 15px var(--display); white-space:nowrap}
+.note{margin:10px 16px; font-size:13.5px; color:var(--muted)}
+
+.toast{
+  position:fixed; left:50%; bottom:calc(20px + env(safe-area-inset-bottom)); transform:translateX(-50%) translateY(20px);
+  background:var(--ink); color:var(--bg); padding:10px 16px; border-radius:999px; font-size:14px; opacity:0; pointer-events:none;
+  transition:opacity .2s, transform .2s; display:flex; gap:12px; align-items:center; max-width:calc(100vw - 24px); z-index:10;
+}
+.toast.show{opacity:1; transform:translateX(-50%); pointer-events:auto}
+.toast button{border:0; background:transparent; color:inherit; font-weight:700; text-decoration:underline; padding:0}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Overlap</h1>
+      <p class="tag">Drag any timeline to see the same moment in every city.</p>
+    </div>
+    <button class="btn primary" id="openAdd" type="button">Add city</button>
+  </header>
+
+  <div class="daybar">
+    <button class="btn step" id="prevDay" type="button" aria-label="Previous day">‹</button>
+    <input type="date" id="dayInput" aria-label="Date">
+    <button class="btn step" id="nextDay" type="button" aria-label="Next day">›</button>
+    <button class="btn live on" id="nowBtn" type="button"><i></i><span id="nowLabel">Live</span></button>
+  </div>
+
+  <ul id="rows"></ul>
+
+  <div class="legend" aria-label="Timeline colors">
+    <span><s style="background:var(--night)"></s>Night</span>
+    <span><s style="background:var(--twi)"></s>Twilight</span>
+    <span><s style="background:var(--day)"></s>Daylight</span>
+    <span><s style="background:var(--work)"></s>Work hours</span>
+  </div>
+
+  <div class="tools">
+    <button class="btn small" id="h24" type="button" aria-pressed="false">24-hour clock</button>
+    <button class="btn small" id="sortBtn" type="button">Sort by time zone</button>
+    <button class="btn small" id="shareBtn" type="button">Copy share link</button>
+    <button class="btn small" id="resetBtn" type="button">Restore default cities</button>
+  </div>
+
+  <footer>
+    Your cities are saved in this browser only. Share link sends your list to family so they can add it to theirs.
+    Daylight and twilight are calculated from each city’s coordinates. Cities come from Open-Meteo’s free geocoding database; time zones come from the IANA database built into your browser.
+  </footer>
+</div>
+
+<dialog id="addDlg" aria-label="Add a city or time zone">
+  <div class="dhead">
+    <input id="q" type="search" placeholder="Search a city or time zone" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <button class="btn" id="closeAdd" type="button">Close</button>
+  </div>
+  <div class="results" id="results"></div>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"><span id="toastMsg"></span><button id="toastAct" type="button" hidden></button></div>
+
+<script>
+(() => {
+"use strict";
+
+/* ---------- storage ---------- */
+const LS_KEY = "overlap.v1";
+const POPULAR = [
+  ["New York","America/New_York","US",40.713,-74.006],["Los Angeles","America/Los_Angeles","US",34.052,-118.244],
+  ["Chicago","America/Chicago","US",41.878,-87.630],["Mexico City","America/Mexico_City","MX",19.433,-99.133],
+  ["São Paulo","America/Sao_Paulo","BR",-23.551,-46.633],["London","Europe/London","GB",51.507,-0.128],
+  ["Paris","Europe/Paris","FR",48.857,2.352],["Berlin","Europe/Berlin","DE",52.520,13.405],
+  ["Cairo","Africa/Cairo","EG",30.044,31.236],["Johannesburg","Africa/Johannesburg","ZA",-26.204,28.047],
+  ["Dubai","Asia/Dubai","AE",25.205,55.271],["Mumbai","Asia/Kolkata","IN",19.076,72.878],
+  ["Singapore","Asia/Singapore","SG",1.352,103.820],["Tokyo","Asia/Tokyo","JP",35.690,139.692],
+  ["Sydney","Australia/Sydney","AU",-33.869,151.209],["Auckland","Pacific/Auckland","NZ",-36.849,174.763]
+].map(([name, tz, cc, lat, lon]) => ({ id: name + "|" + tz, name, tz, cc, region: "", lat, lon }));
+// Starter cities for a first visit. Everyone can remove them, and "Restore default cities" brings them back.
+const DEFAULT_CITIES = ["New York", "Los Angeles", "London", "Tokyo", "Sydney"].map(n => POPULAR.find(c => c.name === n));
+let fresh = false;
+const prefers24 = (() => { try { const hc = new Intl.DateTimeFormat(undefined,{hour:"numeric"}).resolvedOptions().hourCycle; return hc === "h23" || hc === "h24"; } catch { return false; } })();
+const state = (() => {
+  try {
+    const s = JSON.parse(localStorage.getItem(LS_KEY));
+    if (s && Array.isArray(s.cities)) return { cities: s.cities, h24: typeof s.h24 === "boolean" ? s.h24 : prefers24, home: s.home || null };
+  } catch {}
+  fresh = true;
+  return { cities: DEFAULT_CITIES.map(c => ({ ...c })), h24: prefers24, home: null };
+})();
+const save = () => { try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch {} };
+// Cities saved by an earlier version have no coordinates: fill them in from the built-in list when we can.
+for (const c of state.cities) if (c.lat == null && !c.nc) { const k = POPULAR.find(x => x.id === c.id); if (k) { c.lat = k.lat; c.lon = k.lon; } }
+
+/* ---------- time helpers ---------- */
+const HOME = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"; } catch { return "UTC"; } })();
+const pad = n => String(n).padStart(2, "0");
+const cache = { dtf: new Map(), abbr: new Map(), date: new Map() };
+
+function dtf(tz) {
+  let f = cache.dtf.get(tz);
+  if (!f) {
+    f = new Intl.DateTimeFormat("en-US", { timeZone: tz, hourCycle: "h23", year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric", weekday: "short" });
+    cache.dtf.set(tz, f);
+  }
+  return f;
+}
+function parts(tz, ms) {
+  const o = {};
+  for (const p of dtf(tz).formatToParts(ms)) if (p.type !== "literal") o[p.type] = p.value;
+  return { y: +o.year, m: +o.month, d: +o.day, h: (+o.hour) % 24, mi: +o.minute, wd: o.weekday };
+}
+function offsetMin(tz, ms) {
+  const p = parts(tz, ms);
+  const asUTC = Date.UTC(p.y, p.m - 1, p.d, p.h, p.mi, 0);
+  return Math.round((asUTC - Math.floor(ms / 60000) * 60000) / 60000);
+}
+function zonedToUtc(tz, y, m, d, h = 0, mi = 0) {
+  const target = Date.UTC(y, m - 1, d, h, mi);
+  let guess = target;
+  for (let i = 0; i < 3; i++) guess = target - offsetMin(tz, guess) * 60000;
+  return guess;
+}
+function startOfDay(tz, ms) { const p = parts(tz, ms); return zonedToUtc(tz, p.y, p.m, p.d); }
+function abbr(tz, ms) {
+  let f = cache.abbr.get(tz);
+  if (!f) { f = new Intl.DateTimeFormat("en-US", { timeZone: tz, timeZoneName: "short" }); cache.abbr.set(tz, f); }
+  const p = f.formatToParts(ms).find(x => x.type === "timeZoneName");
+  return p ? p.value : "";
+}
+function dateLabel(tz, ms) {
+  let f = cache.date.get(tz);
+  if (!f) { f = new Intl.DateTimeFormat(undefined, { timeZone: tz, weekday: "short", month: "short", day: "numeric" }); cache.date.set(tz, f); }
+  return f.format(ms);
+}
+function gmtLabel(min) {
+  const s = min < 0 ? "−" : "+", a = Math.abs(min), h = Math.floor(a / 60), m = a % 60;
+  return "UTC" + s + h + (m ? ":" + pad(m) : "");
+}
+function hm(min) { const h = Math.floor(min / 60), m = min % 60; return (h ? h + "h" : "") + (h && m ? " " : "") + (m ? m + "m" : ""); }
+function fmtClock(p) {
+  if (state.h24) return { t: pad(p.h) + ":" + pad(p.mi), s: "" };
+  return { t: ((p.h % 12) || 12) + ":" + pad(p.mi), s: p.h < 12 ? "AM" : "PM" };
+}
+function cityFromTz(tz) { return tz.split("/").pop().replace(/_/g, " "); }
+function flag(cc) { return cc && /^[A-Za-z]{2}$/.test(cc) ? String.fromCodePoint(...[...cc.toUpperCase()].map(c => 127397 + c.charCodeAt(0))) : ""; }
+function esc(s) { return String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+function validTz(tz) { try { new Intl.DateTimeFormat("en", { timeZone: tz }); return true; } catch { return false; } }
+
+/* ---------- sun position ---------- */
+const HORIZON = -0.833, CIVIL = -6; // degrees: sunrise/sunset, and the edge of civil twilight
+function sunElev(lat, lon, ms) {
+  const rad = Math.PI / 180;
+  const n = ms / 86400000 + 2440587.5 - 2451545.0;
+  const L = 280.460 + 0.9856474 * n;
+  const g = (357.528 + 0.9856003 * n) * rad;
+  const lam = (L + 1.915 * Math.sin(g) + 0.020 * Math.sin(2 * g)) * rad;
+  const eps = (23.439 - 0.0000004 * n) * rad;
+  const sinDec = Math.sin(eps) * Math.sin(lam);
+  const cosDec = Math.sqrt(1 - sinDec * sinDec);
+  const ra = Math.atan2(Math.cos(eps) * Math.sin(lam), Math.cos(lam));
+  const H = (280.46061837 + 360.98564736629 * n + lon) * rad - ra;
+  const sinEl = Math.sin(lat * rad) * sinDec + Math.cos(lat * rad) * cosDec * Math.cos(H);
+  return Math.asin(Math.max(-1, Math.min(1, sinEl))) / rad;
+}
+const sunCache = new Map();
+function sunDay(c, y, m, d) {
+  const key = c.id + "|" + y + "-" + m + "-" + d;
+  let r = sunCache.get(key);
+  if (r) return r;
+  const t0 = zonedToUtc(c.tz, y, m, d), t1 = zonedToUtc(c.tz, y, m, d + 1), step = 600000;
+  const up = t => sunElev(c.lat, c.lon, t) >= HORIZON;
+  const cross = (a, b) => { for (let i = 0; i < 14; i++) { const mid = (a + b) / 2; if (up(mid) === up(a)) a = mid; else b = mid; } return Math.round((a + b) / 2); };
+  let rise = null, set = null, prev = t0;
+  for (let t = t0 + step; t <= t1; t += step) {
+    if (up(t) !== up(prev)) { if (up(t) && rise === null) rise = cross(prev, t); else if (!up(t) && set === null) set = cross(prev, t); }
+    prev = t;
+  }
+  r = { rise, set, up: up((t0 + t1) / 2) };
+  sunCache.set(key, r);
+  return r;
+}
+function classAt(c, ms) {
+  const p = parts(c.tz, ms), f = p.h + p.mi / 60;
+  if (f >= 9 && f < 17) return "w";
+  if (c.lat == null) return cellClass(p.h, p.mi);
+  const el = sunElev(c.lat, c.lon, ms);
+  return el >= HORIZON ? "d" : el >= CIVIL ? "t" : "n";
+}
+const CLASS_COLOR = { n: "var(--night)", t: "var(--twi)", d: "var(--day)", w: "var(--work)" };
+function gradientFor(c) {
+  const seg = 96, step = 900000, runs = [];
+  for (let i = 0; i < seg; i++) {
+    const k = classAt(c, S.winStart + i * step + step / 2), last = runs[runs.length - 1];
+    if (last && last.k === k) last.e = i + 1; else runs.push({ k, s: i, e: i + 1 });
+  }
+  return "linear-gradient(to right," + runs.map(r => `${CLASS_COLOR[r.k]} ${(r.s / seg * 100).toFixed(3)}% ${(r.e / seg * 100).toFixed(3)}%`).join(",") + ")";
+}
+function sunText(c, p) {
+  if (c.lat == null) return "";
+  const e = sunDay(c, p.y, p.m, p.d);
+  if (e.rise === null && e.set === null) return e.up ? "Sun up all day" : "Sun down all day";
+  const f = ms => { const q = fmtClock(parts(c.tz, ms)); return q.t + (q.s ? " " + q.s : ""); };
+  return "Daylight " + (e.rise !== null ? f(e.rise) : "—") + " – " + (e.set !== null ? f(e.set) : "—");
+}
+
+/* ---------- coordinates for cities that don't have them yet ---------- */
+async function lookupCoords(name, tz) {
+  try {
+    const r = await fetch("https://geocoding-api.open-meteo.com/v1/search?count=10&language=en&format=json&name=" + encodeURIComponent(name));
+    if (!r.ok) return undefined;
+    const j = await r.json();
+    const hit = (j.results || []).find(x => x.timezone === tz);
+    return hit ? { lat: +hit.latitude.toFixed(3), lon: +hit.longitude.toFixed(3) } : null;
+  } catch { return undefined; } // offline: try again next time
+}
+let coordsBusy = false;
+async function ensureCoords() {
+  if (coordsBusy) return;
+  coordsBusy = true;
+  let changed = false;
+  try {
+    if (!state.home || state.home.tz !== HOME) state.home = { tz: HOME };
+    const jobs = [];
+    if (state.home.lat == null && !state.home.nc) jobs.push([state.home, cityFromTz(HOME)]);
+    for (const c of state.cities) if (c.lat == null && !c.nc) jobs.push([c, c.name]);
+    for (const [obj, name] of jobs) {
+      const r = await lookupCoords(name, obj.tz);
+      if (r === undefined) break;
+      if (r) { obj.lat = r.lat; obj.lon = r.lon; } else obj.nc = 1;
+      changed = true;
+    }
+  } finally { coordsBusy = false; }
+  if (changed) { sunCache.clear(); save(); renderRows(); }
+}
+
+/* ---------- timeline state ---------- */
+const now0 = Date.now();
+const S = { winStart: startOfDay(HOME, now0), cursor: now0, live: true };
+const MIN_PER_DAY = 1440;
+const clampMin = m => Math.max(0, Math.min(MIN_PER_DAY, m));
+const minutes = () => clampMin((S.cursor - S.winStart) / 60000);
+
+/* ---------- DOM ---------- */
+const $ = id => document.getElementById(id);
+const rowsEl = $("rows"), dayInput = $("dayInput"), nowBtn = $("nowBtn"), nowLabel = $("nowLabel");
+let rowRefs = [];
+
+function entries() {
+  const h = state.home && state.home.tz === HOME ? state.home : {};
+  return [{ id: "__home", home: true, name: cityFromTz(HOME), tz: HOME, lat: h.lat, lon: h.lon }, ...state.cities];
+}
+
+function cellClass(h, mi) {
+  const f = h + mi / 60;
+  if (f >= 21 || f < 6) return "n";
+  if (f < 8 || f >= 19) return "t";
+  if (f >= 9 && f < 17) return "w";
+  return "d";
+}
+
+function renderRows() {
+  rowsEl.innerHTML = "";
+  rowRefs = [];
+  for (const c of entries()) {
+    const li = document.createElement("li");
+    li.className = "row";
+    let cells = "";
+    for (let i = 0; i < 24; i++) {
+      const p = parts(c.tz, S.winStart + i * 3600000);
+      const mid = p.h === 0 && p.mi === 0;
+      let lab;
+      if (mid) lab = p.wd;
+      else if (state.h24) lab = String(p.h);
+      else lab = String((p.h % 12) || 12);
+      cells += `<div class="cell ${classAt(c, S.winStart + i * 3600000 + 1800000)}${mid ? " mid" : ""}"><b>${esc(lab)}</b>${p.mi ? `<i>:${pad(p.mi)}</i>` : ""}</div>`;
+    }
+    li.innerHTML = `
+      <div class="who">
+        <div class="name"><span class="t">${esc(c.name)}</span>${c.cc ? `<span aria-hidden="true">${flag(c.cc)}</span>` : ""}${c.home ? "" : `<button class="rm" type="button" aria-label="Remove ${esc(c.name)}">×</button>`}</div>
+        <div class="meta"></div>
+        <div class="sun"></div>
+      </div>
+      <div class="when"><div class="clock"></div><div class="date"></div></div>
+      <div class="track" role="slider" tabindex="0" aria-label="Time in ${esc(c.name)}" aria-valuemin="0" aria-valuemax="${MIN_PER_DAY}">
+        <div class="cells" style="background:${gradientFor(c)}">${cells}</div>
+        <div class="cur"></div>
+      </div>`;
+    rowsEl.appendChild(li);
+    const ref = {
+      c, li,
+      meta: li.querySelector(".meta"), sun: li.querySelector(".sun"), clock: li.querySelector(".clock"), date: li.querySelector(".date"),
+      track: li.querySelector(".track"), cur: li.querySelector(".cur")
+    };
+    rowRefs.push(ref);
+    bindTrack(ref);
+    const rm = li.querySelector(".rm");
+    if (rm) rm.addEventListener("click", () => removeCity(c.id));
+  }
+  if (!state.cities.length) {
+    const li = document.createElement("li");
+    li.className = "empty";
+    li.innerHTML = `<p>Add a city to compare it with your own time.</p>`;
+    const b = document.createElement("button");
+    b.className = "btn primary"; b.type = "button"; b.textContent = "Add city";
+    b.addEventListener("click", openAdd);
+    li.appendChild(b);
+    rowsEl.appendChild(li);
+  }
+  syncDayInput();
+  update();
+}
+
+function update() {
+  const c = S.cursor, mins = minutes(), hp = parts(HOME, c), hOff = offsetMin(HOME, c);
+  nowBtn.classList.toggle("on", S.live);
+  nowLabel.textContent = S.live ? "Live" : "Now";
+  for (const r of rowRefs) {
+    const tz = r.c.tz, p = parts(tz, c), off = offsetMin(tz, c);
+    const ck = fmtClock(p);
+    r.clock.innerHTML = esc(ck.t) + (ck.s ? `<small>${ck.s}</small>` : "");
+    const dd = Math.round((Date.UTC(p.y, p.m - 1, p.d) - Date.UTC(hp.y, hp.m - 1, hp.d)) / 864e5);
+    r.date.innerHTML = esc(dateLabel(tz, c)) + (dd ? `<em>${dd > 0 ? "+" : "−"}${Math.abs(dd)} day</em>` : "");
+    const ab = abbr(tz, c);
+    const abPart = ab && !/^(GMT|UTC)[+−-]/.test(ab) && ab !== gmtLabel(off) ? " · " + ab : "";
+    if (r.c.home) r.meta.textContent = "Here · " + gmtLabel(off) + abPart;
+    else {
+      const d = off - hOff;
+      r.meta.textContent = gmtLabel(off) + abPart + " · " + (d === 0 ? "same as here" : hm(Math.abs(d)) + (d > 0 ? " ahead" : " behind"));
+    }
+    r.sun.textContent = sunText(r.c, p);
+    r.cur.style.left = (mins / MIN_PER_DAY * 100) + "%";
+    r.track.setAttribute("aria-valuenow", Math.round(mins));
+    r.track.setAttribute("aria-valuetext", ck.t + (ck.s ? " " + ck.s : "") + ", " + dateLabel(tz, c));
+  }
+}
+
+function syncDayInput() {
+  const p = parts(HOME, S.winStart);
+  dayInput.value = `${p.y}-${pad(p.m)}-${pad(p.d)}`;
+}
+
+/* ---------- interaction ---------- */
+function setMinutes(m, snap) {
+  m = clampMin(snap ? Math.round(m / 5) * 5 : m);
+  S.cursor = S.winStart + m * 60000;
+  S.live = false;
+  update();
+}
+function bindTrack(r) {
+  const t = r.track;
+  const fromEvent = e => {
+    const b = t.getBoundingClientRect();
+    return ((e.clientX - b.left) / b.width) * MIN_PER_DAY;
+  };
+  t.addEventListener("pointerdown", e => {
+    t.setPointerCapture(e.pointerId);
+    t.dataset.drag = "1";
+    setMinutes(fromEvent(e), true);
+  });
+  t.addEventListener("pointermove", e => { if (t.dataset.drag) setMinutes(fromEvent(e), true); });
+  const end = e => { delete t.dataset.drag; };
+  t.addEventListener("pointerup", end);
+  t.addEventListener("pointercancel", end);
+  t.addEventListener("keydown", e => {
+    const m = minutes();
+    const step = e.shiftKey ? 60 : 5;
+    let n = null;
+    if (e.key === "ArrowRight" || e.key === "ArrowUp") n = m + step;
+    else if (e.key === "ArrowLeft" || e.key === "ArrowDown") n = m - step;
+    else if (e.key === "PageUp") n = m + 60;
+    else if (e.key === "PageDown") n = m - 60;
+    else if (e.key === "Home") n = 0;
+    else if (e.key === "End") n = MIN_PER_DAY;
+    if (n !== null) { e.preventDefault(); setMinutes(n, false); }
+  });
+}
+
+function goToDay(y, m, d) {
+  const mins = minutes();
+  S.winStart = zonedToUtc(HOME, y, m, d);
+  S.cursor = S.winStart + mins * 60000;
+  S.live = false;
+  renderRows();
+}
+dayInput.addEventListener("change", () => {
+  const [y, m, d] = dayInput.value.split("-").map(Number);
+  if (y && m && d) goToDay(y, m, d);
+});
+function shiftDay(delta) {
+  const p = parts(HOME, S.winStart);
+  const dt = new Date(Date.UTC(p.y, p.m - 1, p.d + delta));
+  goToDay(dt.getUTCFullYear(), dt.getUTCMonth() + 1, dt.getUTCDate());
+}
+$("prevDay").addEventListener("click", () => shiftDay(-1));
+$("nextDay").addEventListener("click", () => shiftDay(1));
+nowBtn.addEventListener("click", () => {
+  const n = Date.now();
+  const ws = startOfDay(HOME, n);
+  const changed = ws !== S.winStart;
+  S.winStart = ws; S.cursor = n; S.live = true;
+  if (changed) renderRows(); else { syncDayInput(); update(); }
+});
+setInterval(() => {
+  if (!S.live) return;
+  const n = Date.now();
+  const ws = startOfDay(HOME, n);
+  S.cursor = n;
+  if (ws !== S.winStart) { S.winStart = ws; renderRows(); } else update();
+}, 1000);
+
+/* ---------- list actions ---------- */
+function toast(msg, actLabel, act) {
+  const el = $("toast"), a = $("toastAct");
+  $("toastMsg").textContent = msg;
+  if (actLabel) { a.hidden = false; a.textContent = actLabel; a.onclick = () => { act(); el.classList.remove("show"); }; }
+  else { a.hidden = true; a.onclick = null; }
+  el.classList.add("show");
+  clearTimeout(toast.t);
+  toast.t = setTimeout(() => el.classList.remove("show"), actLabel ? 6000 : 2600);
+}
+function addCity(item) {
+  if (state.cities.some(c => c.id === item.id)) return;
+  state.cities.push({ id: item.id, name: item.name, region: item.region || "", cc: item.cc || "", tz: item.tz, ...(item.lat != null ? { lat: +(+item.lat).toFixed(3), lon: +(+item.lon).toFixed(3) } : {}) });
+  save(); renderRows(); ensureCoords();
+  toast("Added " + item.name);
+}
+function removeCity(id) {
+  const i = state.cities.findIndex(c => c.id === id);
+  if (i < 0) return;
+  const [gone] = state.cities.splice(i, 1);
+  save(); renderRows();
+  toast("Removed " + gone.name, "Undo", () => { state.cities.splice(i, 0, gone); save(); renderRows(); });
+}
+$("h24").setAttribute("aria-pressed", String(state.h24));
+$("h24").addEventListener("click", e => {
+  state.h24 = !state.h24;
+  e.currentTarget.setAttribute("aria-pressed", String(state.h24));
+  save(); renderRows();
+});
+$("sortBtn").addEventListener("click", () => {
+  const c = S.cursor;
+  state.cities.sort((a, b) => offsetMin(a.tz, c) - offsetMin(b.tz, c));
+  save(); renderRows();
+  toast("Sorted by time zone");
+});
+
+$("resetBtn").addEventListener("click", () => {
+  let n = 0;
+  for (const d of DEFAULT_CITIES) if (!state.cities.some(c => c.id === d.id)) { state.cities.push({ ...d }); n++; }
+  save(); renderRows();
+  toast(n ? `Restored ${n} default ${n === 1 ? "city" : "cities"}` : "Default cities are already on the list");
+});
+
+/* share link */
+const b64 = s => btoa(String.fromCharCode(...new TextEncoder().encode(s))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+const unb64 = s => new TextDecoder().decode(Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/")), ch => ch.charCodeAt(0)));
+$("shareBtn").addEventListener("click", async () => {
+  if (!state.cities.length) { toast("Add a city first"); return; }
+  const payload = b64(JSON.stringify(state.cities.map(c => [c.name, c.tz, c.cc || "", c.region || "", c.lat != null ? +(+c.lat).toFixed(2) : null, c.lon != null ? +(+c.lon).toFixed(2) : null])));
+  const url = location.origin + location.pathname + "#add=" + payload;
+  try {
+    if (navigator.share) { await navigator.share({ title: "Overlap", text: "Compare our time zones", url }); return; }
+  } catch (e) { if (e && e.name === "AbortError") return; }
+  try { await navigator.clipboard.writeText(url); toast("Link copied"); }
+  catch { window.prompt("Copy this link:", url); }
+});
+function importFromHash() {
+  const m = location.hash.match(/^#add=([A-Za-z0-9_-]+)$/);
+  if (!m) return;
+  if (fresh) state.cities = []; // opened from a share link on a first visit: use the shared list instead of the starters
+  try {
+    const arr = JSON.parse(unb64(m[1]));
+    let n = 0;
+    for (const [name, tz, cc, region, lat, lon] of arr) {
+      if (!name || !tz || !validTz(tz)) continue;
+      const id = name + "|" + tz;
+      if (state.cities.some(c => c.id === id)) continue;
+      state.cities.push({ id, name: String(name), tz, cc: cc || "", region: region || "", ...(typeof lat === "number" && typeof lon === "number" ? { lat, lon } : {}) });
+      n++;
+    }
+    save();
+    history.replaceState(null, "", location.pathname + location.search);
+    if (n) setTimeout(() => toast(`Added ${n} ${n === 1 ? "city" : "cities"} from the link`), 300);
+  } catch {}
+}
+
+/* ---------- add dialog ---------- */
+const dlg = $("addDlg"), q = $("q"), results = $("results");
+
+let ZONES = [];
+try { ZONES = Intl.supportedValuesOf("timeZone"); } catch {}
+if (!ZONES.includes("UTC")) ZONES = ["UTC", ...ZONES];
+
+function tzMatches(query) {
+  const s = query.toLowerCase().replace(/[\s_]+/g, " ");
+  return ZONES.filter(z => z.toLowerCase().replace(/_/g, " ").includes(s)).slice(0, 6)
+    .map(tz => ({ id: cityFromTz(tz) + "|" + tz, name: cityFromTz(tz), tz, cc: "", region: tz.includes("/") ? tz.split("/")[0].replace(/_/g, " ") : "", zone: true }));
+}
+
+let reqId = 0, timer = 0, ctrl = null, lastCities = [], cityState = "idle";
+
+function itemEl(it) {
+  const b = document.createElement("button");
+  b.type = "button"; b.className = "item";
+  const added = state.cities.some(c => c.id === it.id);
+  if (added) b.disabled = true;
+  const t = Date.now(), p = parts(it.tz, t), ck = fmtClock(p);
+  const sub = [it.region, it.country, it.zone ? "Time zone" : ""].filter(Boolean).join(", ");
+  b.innerHTML = `<div class="l"><div class="n1">${it.cc ? flag(it.cc) + " " : ""}${esc(it.name)}${added ? " · added" : ""}</div><div class="n2">${esc(sub ? sub + " · " : "")}${esc(it.tz)}</div></div><div class="tm">${esc(ck.t)}${ck.s ? " " + ck.s : ""}</div>`;
+  b.addEventListener("click", () => { addCity(it); dlg.close(); });
+  return b;
+}
+function group(title) { const d = document.createElement("div"); d.className = "group"; d.textContent = title; return d; }
+function note(text) { const d = document.createElement("div"); d.className = "note"; d.textContent = text; return d; }
+
+function renderResults() {
+  const query = q.value.trim();
+  results.innerHTML = "";
+  if (query.length < 2) {
+    results.append(group("Popular cities"), ...POPULAR.map(itemEl));
+    return;
+  }
+  if (cityState === "loading" && !lastCities.length) results.append(note("Searching cities…"));
+  else if (cityState === "error") results.append(note("City search needs an internet connection. Time zones below still work."));
+  else if (lastCities.length) results.append(group(cityState === "loading" ? "Cities (updating…)" : "Cities"), ...lastCities.map(itemEl));
+  else results.append(note("No cities found for “" + query + "”."));
+  const tz = tzMatches(query);
+  if (tz.length) results.append(group("Time zones"), ...tz.map(itemEl));
+}
+
+async function runSearch() {
+  const query = q.value.trim();
+  const id = ++reqId;
+  if (ctrl) ctrl.abort();
+  if (query.length < 2) { cityState = "idle"; lastCities = []; renderResults(); return; }
+  cityState = "loading"; renderResults();
+  ctrl = new AbortController();
+  try {
+    const url = "https://geocoding-api.open-meteo.com/v1/search?count=10&language=en&format=json&name=" + encodeURIComponent(query);
+    const r = await fetch(url, { signal: ctrl.signal });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    const j = await r.json();
+    if (id !== reqId) return;
+    lastCities = (j.results || []).filter(x => x.timezone && validTz(x.timezone)).map(x => ({
+      id: x.name + "|" + x.timezone, name: x.name, tz: x.timezone, cc: x.country_code || "",
+      region: x.admin1 || "", country: x.country || "", lat: x.latitude, lon: x.longitude
+    }));
+    const seen = new Set();
+    lastCities = lastCities.filter(x => { const k = x.name + "|" + x.region + "|" + x.tz; if (seen.has(k)) return false; seen.add(k); return true; });
+    cityState = "ok";
+  } catch (e) {
+    if (e && e.name === "AbortError") return;
+    if (id !== reqId) return;
+    lastCities = []; cityState = "error";
+  }
+  renderResults();
+}
+
+function openAdd() {
+  q.value = ""; cityState = "idle"; lastCities = [];
+  renderResults();
+  dlg.showModal();
+  q.focus();
+}
+$("openAdd").addEventListener("click", openAdd);
+$("closeAdd").addEventListener("click", () => dlg.close());
+dlg.addEventListener("click", e => { if (e.target === dlg) dlg.close(); });
+q.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(runSearch, 150); });
+q.addEventListener("keydown", e => { if (e.key === "Enter") { const first = results.querySelector(".item:not([disabled])"); if (first) { e.preventDefault(); first.click(); } } });
+
+/* ---------- go ---------- */
+importFromHash();
+renderRows();
+ensureCoords();
+if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));
+}
+})();
+</script>
+</body>
+</html>
